@@ -13,15 +13,15 @@ Tool Description:
 
 When the script is run for the first time, you can setup your preferences for auto-adding a prefix to the node name, color of the nodes and the shape for the null node and object merge node.
 <p align="middle">
-  <img src="https://github.com/user-attachments/assets/851a0e14-8bf0-48c5-8030-3cf667991016" width = 300 />
+  <img src="https://github.com/user-attachments/assets/0ecc4449-61ec-4a60-91a8-d09d95ff81b7" width = 300 />
 </p> 
 
 Once the preferences are saved, you can start modifying or creating nulls and object merges and it will do this based on your user preferences.
 
 <p align="middle">
-  <img src="https://github.com/user-attachments/assets/7460afbb-d7dd-4e0b-a624-9999880dd9e2" width="353" />
-  <img src="https://github.com/user-attachments/assets/3f112970-6ba5-4ae3-ab75-c07b314d5f4f" width="279" />
-  <img src="https://github.com/user-attachments/assets/71dc9a10-0061-49e9-a0ed-7a865b4db774" width="266" />
+  <img src="https://github.com/user-attachments/assets/9eb08d01-ced0-49a6-868b-52ccbb457637" width="353" />
+  <img src="https://github.com/user-attachments/assets/79ec5d39-e0af-4c33-99bc-2dd4bcf8a349" width="279" />
+  <img src="https://github.com/user-attachments/assets/85320833-fbc1-431f-a667-5aa9ad18ac86" width="266" />
 </p>
 
 ## Tool Setup and Demo
@@ -43,7 +43,7 @@ To get started:
 
 Here's a quick setup guide:
 <p align="middle">
-  <img src="https://github.com/user-attachments/assets/7a1d4f22-7cf9-4caf-a4a5-81d2071595d1" width="700" />
+  <img src="https://github.com/user-attachments/assets/15e448e9-442d-4c04-987b-f91fdcad4da9" width="700" />
 </p>
 
 ---
@@ -59,7 +59,7 @@ Here's a quick setup guide:
 
 Here's a quick UI setup guide and tool demo:
 <p align="middle">
-  <img src="https://github.com/user-attachments/assets/c5cddfb6-f8ca-4080-a04d-9c657f748bf1" width="700" />
+  <img src="https://github.com/user-attachments/assets/2515a6e3-8372-434b-922a-f510f79f55bc" width="700" />
 </p>
 
 >[!note]
