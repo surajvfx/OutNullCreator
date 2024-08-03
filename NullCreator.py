@@ -67,7 +67,8 @@ class MainWindow(QtWidgets.QWidget):
         self.prefix_box.toggled.connect(self.prefix_value)
         
         # Create horizontal box widget layout which contains prefix
-        prefix_layout = QtWidgets.QHBoxLayout()
+        prefix_layout = QtWidgets.QVBoxLayout()
+        prefix_layout.setSpacing(10)
         self.prefix_box.setLayout(prefix_layout)
         
         # Create QLineEdit to take user input for Prefix
@@ -75,6 +76,12 @@ class MainWindow(QtWidgets.QWidget):
         self.name_prefix.setMinimumSize(80,30)
         prefix_layout.addWidget(self.name_prefix)
         self.name_prefix.setText("OUT_")
+        
+        # Check Box for enabling popup for name input
+        self.renameCheck = QtWidgets.QCheckBox("Show Rename Dialog Box Everytime", self)
+        self.renameCheck.setChecked(0)
+        prefix_layout.addWidget(self.renameCheck)
+        self.renameCheck.stateChanged.connect(self.renameCheck_status)
         
         # Group box for selecting a shape for Null and add widget to window layout
         self.null_shape_box = QtWidgets.QGroupBox("Select Null Shape", self)
@@ -141,6 +148,20 @@ class MainWindow(QtWidgets.QWidget):
         self.progress_bar = QtWidgets.QProgressBar(self)
         self.progress_bar.setValue(0)
         layout.addWidget(self.progress_bar)
+        
+    # Declare global variable checkBoxState and initialise with value of 0    
+    global renameCheckState    
+    renameCheckState = str("0")
+        
+    # Check create merge checkbox and set state    
+    def renameCheck_status(self, state):     
+        
+        global renameCheckState
+        
+        if state > 0:
+            renameCheckState = str("1")
+        else:
+            renameCheckState = str("0")
     
     # Declare global variable checkBoxState and initialise with value of 0    
     global checkBoxState    
@@ -196,6 +217,7 @@ class MainWindow(QtWidgets.QWidget):
                  +null_shape+"\n"
                  +merge_shape+"\n"
                  +checkBoxState+"\n"
+                 +renameCheckState+"\n"
                 )       
 
         #write to text file
@@ -223,6 +245,7 @@ def read_prefs():
     global read_shape
     global read_merge_shape
     global int_state
+    global read_renameCheck
 
     color = list[0]
     color = str.replace(color, "[", "")
@@ -236,12 +259,14 @@ def read_prefs():
     read_shape = list[2]
     read_merge_shape = list[3]
     read_merge_state = list[4]
+    read_renameCheck = list[5]
     int_state = int(read_merge_state)
     return(rounded_color)
     return(prefix)
     return(read_shape)
     return(read_merge_shape)
     return(int_state)
+    return(read_renameCheck)
 
 #Ask user to set node name and add the prefix to it    
 def node_name():
@@ -249,14 +274,24 @@ def node_name():
     global final_name
     global user_name
     
-    input_name = (hou.ui.readInput('Rename Node', buttons=('OK',), severity=hou.severityType.Message, default_choice=0, close_choice=-1, help=None, title=None))
+    int_renameCheck = int(read_renameCheck)
     
-    if len(input_name[1]) < 1:
-        user_name = str("null")
+    #check user preferences for rename node popup
+    if int_renameCheck > 0:
+        input_name = (hou.ui.readInput('Rename Node', buttons=('OK',), severity=hou.severityType.Message, default_choice=0, close_choice=-1, help=None, title=None))
+        if len(input_name[1]) > 1:
+            user_name = str.replace(input_name[1], " ", "_")
+        else:
+            user_name = str("")
     else:
-        user_name = str.replace(input_name[1], " ", "_")
+        user_name = str("")
+        
+    final_name = prefix + user_name    
     
-    final_name = prefix + user_name
+    #check length of string final_name and assign a string value if it's empty
+    if len(final_name) < 1:
+        final_name = str("NULL")
+   
     return(final_name)
     return(user_name)
     
@@ -320,35 +355,79 @@ def modifyNull():
     existing_null = path
     return(existing_null)
     
-def createMerge():
+def createNullatCursor():
 
-    #get last selected node and get the name as string
-    node = select[-1]
-    nodeName = str(node)
+    global created_null
+    global curPos
     
     #get the position of selected node and add -2 in y direction for new position
-    position = node.position()
-    type = node.type()
-    if type == hou.sopNodeTypeCategory().nodeType("null"):
-        addPos = hou.Vector2(0, -2)
-    else:
-        addPos = hou.Vector2(0, -4)
-    newPos = position + addPos
+    curPos = hou.ui.paneTabOfType(hou.paneTabType.NetworkEditor).cursorPosition()
+    position = curPos
 
     #get the path of selected node as string and store parent path in newPath
-    path = str(node.path())
-    newPath = str.replace(path, nodeName, "")
+    paneTabObj = hou.ui.paneTabUnderCursor()
+    path = paneTabObj.pwd().path()
+
+    #create a null object in previously defined path
+    null = hou.node(path).createNode("null")
+    null.move(curPos)
+
+    #generate name from parent node and apply to null with prefix
+    newName = final_name
+    
+    #set name, color and shape
+    null.setName(newName,unique_name=True)
+    null.setColor(hou.Color(rounded_color))
+    null.setUserData('nodeshape', read_shape)
+
+    created_null = path+"/"+newName
+    return(created_null)
+    
+def createMerge():
+
+    #check if nodes are selected, else create merge for null at cursor position
+    if len(select) > 0:
+        #get last selected node and get position, name as string
+        node = select[-1]
+        nodeName = str(node)
+        position = node.position()
+        #get the position of selected node and add values for new position
+        type = node.type()
+        if type == hou.sopNodeTypeCategory().nodeType("null"):
+            addPos = hou.Vector2(0, -2)
+        else:
+            addPos = hou.Vector2(0, -4)
+        newPos = position + addPos
+        
+        #get the path of selected node as string and store parent path in newPath
+        path = str(node.path())
+        newPath = str.replace(path, nodeName, "")
+            
+    else:
+        #get cursor position, path and set position values
+        curPos = hou.ui.paneTabOfType(hou.paneTabType.NetworkEditor).cursorPosition()
+        position = curPos
+        paneTabObj = hou.ui.paneTabUnderCursor()
+        path = paneTabObj.pwd().path()
+        newPath = path
+        addPos = hou.Vector2(0, -2)     
+        newPos = position + addPos
 
     #create a merge object in previously defined path
     merge = hou.node(newPath).createNode("object_merge")
-
-    #set merge parameter to user selected null
-    if type == hou.sopNodeTypeCategory().nodeType("null"):
-        merge.parm('objpath1').set(existing_null)
+    
+    #set merge parameter to user selected null or created null
+    if len(select) > 0:
+        node = select[-1]
+        type = node.type()
+        if type == hou.sopNodeTypeCategory().nodeType("null"):
+            merge.parm('objpath1').set(existing_null)
+        else:
+            merge.parm('objpath1').set(created_null)
     else:
         merge.parm('objpath1').set(created_null)
-
-    #generate name from parent node and apply to merge with prefix
+        
+    #generate name from user prefix+input and apply to merge with prefix
     newName = "MERGE_" + user_name
    
     #set name, color and shape
@@ -368,16 +447,16 @@ except:
 window = MainWindow()    
 
 def runCommands():
-    #check if there are any selected nodes; if not, notify user
-    if len(select)>0:
-        node = select[0] 
-        type = node.type()
-        #Check if preferences .txt file exists; if not, open user prefs panel
-        if os.path.isfile(prefs):
-            file = open(prefs, 'r')
-            content = file.read()
-            file.close()
-            list = str.split(content, "\n")
+    #Check if preferences .txt file exists; if not, open user prefs panel
+    if os.path.isfile(prefs):
+        file = open(prefs, 'r')
+        content = file.read()
+        file.close()
+        list = str.split(content, "\n")
+        #check if there are any selected nodes; if not, create null at cursor position
+        if len(select)>0:
+            node = select[0] 
+            type = node.type()
             #Check if preferences file is not empty
             if len(list[0])>0:
                 read_prefs()
@@ -394,11 +473,15 @@ def runCommands():
                     createMerge()  
             else:
                 time.sleep(0.5)
-                window.show()
+                window.show()      
         else:
-            time.sleep(0.5)
-            window.show()          
+            read_prefs()
+            node_name()
+            createNullatCursor()
+            if int_state > 0:
+                createMerge()
     else:
-        hou.ui.displayMessage("No Nodes Selected", buttons=("Ok",), close_choice = 1)
+        time.sleep(0.5)
+        window.show()    
         
 runCommands()
